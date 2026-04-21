@@ -1,0 +1,12 @@
+database:
+  driver: mysql
+  host: 127.0.0.1
+  port: 3306
+  username: root
+  password: '!@#123QWEqwe'
+  dbname: grain
+  charset: utf8mb4
+  max_idle_conns: 10
+  max_open_conns: 100
+server:
+  por: 8080
