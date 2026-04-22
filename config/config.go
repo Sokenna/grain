@@ -288,9 +288,12 @@ func setupConfigPaths() {
 
 // buildDSN 构建数据库连接字符串
 func buildDSN(cfg DatabaseConfig) string {
+	// 方案1：从 viper 直接读取
+	user := viper.GetString("db.username")
+	password := viper.GetString("db.password")
 	return fmt.Sprintf(
 		"%s:%s@tcp(%s:%d)/%s?charset=%s&parseTime=True&loc=Local",
-		cfg.User, cfg.Password,
+		user, password,
 		cfg.Host, cfg.Port,
 		cfg.DBName, cfg.Charset,
 	)
@@ -394,8 +397,7 @@ func (c *AppConfig) Validate() error {
 	}
 	if c.DB.Driver == "mysql" {
 		if err := c.validateMySQLConfig(); err != nil {
-			return fmt.Errorf("最大空闲连接数(%d)不能大于最大打开连接数(%d)",
-				c.DB.MaxIdleConns, c.DB.MaxOpenConns)
+			return err
 		}
 	}
 
