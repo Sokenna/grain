@@ -1,0 +1,24 @@
+#服务器配置
+server:
+  host: localhost
+  port: 8000
+
+#数据库配置
+database:
+  driver: mysql
+  host: 127.0.0.1
+  port: 3306
+  dbname: grain
+  charset: utf8mb4
+  max_idle_conns: 10
+  max_open_conns: 100
+
+#日志配置
+log:
+  level: info
+  format: json
+  file_path: ./logs/grain.log   # 日志文件路径
+  max_size: 100                  # 每个日志文件最大100MB
+  max_backups: 30                # 保留30个备份文件
+  max_age: 7                     # 保留7天
+  compress: true                 # 压缩旧日志
