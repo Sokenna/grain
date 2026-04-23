@@ -2,6 +2,71 @@
 server:
   host: localhost
   port: 8000
+  mode: debug  # debug, release, test
+  read_timeout: 30s
+  write_timeout: 30s
+  idle_timeout: 120s
+  max_header_bytes: 1048576  # 1MB
+  rate_limit:
+    enabled: false
+    default_limit: 100    # 默认每秒100个请求
+    default_burst: 200    # 默认突发200个请求
+      # 规则配置
+    rules:
+        # API v1 规则
+      - paths: [ "/api/v1/" ]
+        methods: [ ]          # 空列表匹配所有方法
+        limit: 50
+        burst: 100
+        key_type: ip
+
+          # 登录接口（更严格的限制）
+      - paths: [ "/api/v1/auth/login", "/api/v1/auth/register" ]
+        methods: [ "POST" ]
+        limit: 10
+        burst: 20
+        key_type: ip
+
+          # 管理员接口（更宽松的限制）
+      - paths: [ "/api/v1/admin/" ]
+        methods: [ ]
+        limit: 200
+        burst: 500
+        key_type: user_id
+
+          # 上传接口（较低的频率）
+      - paths: [ "/api/v1/upload" ]
+        methods: [ "POST", "PUT" ]
+        limit: 20
+        burst: 30
+        key_type: api_key
+
+          # 公开 API
+      - paths: [ "/api/v1/public/" ]
+        methods: [ "GET" ]
+        limit: 200
+        burst: 300
+        key_type: ip
+          # 跳过限流的路径
+    skip_paths:
+      - path: "/health"
+        methods: [ "GET" ]
+        exact: true
+      - path: "/metrics"
+        methods: [ ]
+        exact: false
+      - path: "/swagger"
+        methods: [ "GET" ]
+        exact: false
+      - path: "/favicon.ico"
+        methods: [ "GET" ]
+        exact: true
+    tls:
+      enabled: false
+      cert_file: ./certs/server.crt
+      key_file: ./certs/server.key
+    graceful_shutdown:
+      timeout: 30s
 
 #数据库配置
 database:
