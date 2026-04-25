@@ -2,10 +2,11 @@ package middleware
 
 import (
 	"github.com/gin-gonic/gin"
-	"grain/config"
-	"grain/internal/auth"
 	"net/http"
 	"strings"
+
+	"grain/config"
+	"grain/internal/auth"
 )
 
 // AuthMiddleware 认证中间件
@@ -20,7 +21,6 @@ func AuthMiddleware(jwtManager *auth.JWTManager) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
 		// 验证token
 		claims, err := jwtManager.VerifyToken(tokenString)
 		if err != nil {
@@ -30,12 +30,10 @@ func AuthMiddleware(jwtManager *auth.JWTManager) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
 		// 将用户信息存入上下文
 		c.Set("user_id", claims.UserID)
 		c.Set("username", claims.Username)
 		c.Set("role", claims.Role)
-
 		c.Next()
 	}
 }
@@ -48,7 +46,6 @@ func RBACMiddleware(allowedRoles ...string) gin.HandlerFunc {
 			c.Next()
 			return
 		}
-
 		// 获取用户角色
 		role, exists := c.Get("role")
 		if !exists {
@@ -58,9 +55,7 @@ func RBACMiddleware(allowedRoles ...string) gin.HandlerFunc {
 			c.Abort()
 			return
 		}
-
 		userRole := role.(string)
-
 		// 检查是否为超级管理员
 		for _, superRole := range config.Config.Auth.RBAC.SuperRoles {
 			if userRole == superRole {

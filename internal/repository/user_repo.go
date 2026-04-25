@@ -3,14 +3,16 @@ package repository
 import (
 	"errors"
 	"gorm.io/gorm"
-	"grain/internal/model"
 	"time"
+
+	"grain/internal/model"
 )
 
 // UserRepository 用户数据访问接口
 type UserRepository interface {
 	Create(user *model.User) error
 	Update(user *model.User) error
+	UpdateFields(id uint, fields map[string]interface{}) error
 	Delete(id uint) error
 	GetByID(id uint) (*model.User, error)
 	GetByUsername(username string) (*model.User, error)
@@ -41,6 +43,11 @@ func (r *userRepository) Create(user *model.User) error {
 // Update 更新用户
 func (r *userRepository) Update(user *model.User) error {
 	return r.db.Save(user).Error
+}
+
+// UpdateFields 或者只更新指定字段（更安全）
+func (r *userRepository) UpdateFields(id uint, fields map[string]interface{}) error {
+	return r.db.Model(&model.User{}).Where("id = ?", id).Updates(fields).Error
 }
 
 // Delete 删除用户（软删除或硬删除）

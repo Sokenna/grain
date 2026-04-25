@@ -3,6 +3,8 @@ package router
 import (
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
+	"time"
+
 	"grain/config"
 	"grain/internal/auth"
 	"grain/internal/handler"
@@ -10,7 +12,6 @@ import (
 	"grain/internal/repository"
 	"grain/internal/server"
 	"grain/internal/service"
-	"time"
 )
 
 // Router 路由管理器
@@ -91,10 +92,17 @@ func (r *Router) registerAPIRoutes() {
 	userRepo := repository.NewUserRepository(r.db)
 	userService := service.NewUserService(userRepo, r.jwtManager)
 	userHandler := handler.NewUserHandler(userService)
+
+	menuRepo := repository.NewMenuRepository(r.db)
+	menuService := service.NewMenuService(menuRepo)
+	menuHandler := handler.NewMenuHandler(menuService)
 	// API v1 路由组
 	api := r.engine.Group("/api/v1")
 	// 公开路由组（无需认证）
 	r.registerPublicRoutes(api, userHandler)
+
+	r.registerAuthRoutes(api, userHandler, menuHandler)
+	r.registerAdminRoutes(api, userHandler)
 }
 
 // registerPublicRoutes 注册公开路由
@@ -111,16 +119,19 @@ func (r *Router) registerPublicRoutes(api *gin.RouterGroup, userHandler *handler
 }
 
 // registerAuthRoutes 注册需要认证的路由
-func (r *Router) registerAuthRoutes(api *gin.RouterGroup, userHandler *handler.UserHandler) {
+func (r *Router) registerAuthRoutes(api *gin.RouterGroup, userHandler *handler.UserHandler, menuHandler *handler.MenuHandler) {
 	protected := api.Group("/")
 	protected.Use(middleware.AuthMiddleware(r.jwtManager))
+	{
+		protected.GET("/routes", menuHandler.GetRoutes)
+	}
 	{
 		// 用户相关
 		user := protected.Group("/user")
 		{
 			user.GET("/info", userHandler.GetUserInfo)
 			// TODO: user.PUT("/info", userHandler.UpdateUserInfo)
-			// TODO: user.POST("/change-password", userHandler.ChangePassword)
+			user.POST("/change-password", userHandler.ChangePassword)
 			// TODO: user.GET("/profile", userHandler.GetProfile)
 		}
 

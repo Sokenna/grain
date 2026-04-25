@@ -2,30 +2,19 @@ package handler
 
 import (
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strconv"
+
 	"grain/config"
 	"grain/internal/model"
 	"grain/internal/service"
-	"net/http"
-	"strconv"
 )
 
 type UserHandler struct {
 	userService service.UserService
 }
 
-/*type UserHandler struct {
-	db         *gorm.DB
-	jwtManager *auth.JWTManager
-}
-*/
-/*
-	func NewUserHandler(db *gorm.DB, jwtManager *auth.JWTManager) *UserHandler {
-		return &UserHandler{
-			db:         db,
-			jwtManager: jwtManager,
-		}
-	}
-*/
+// NewUserHandler 创建用户处理句柄
 func NewUserHandler(userService service.UserService) *UserHandler {
 	return &UserHandler{
 		userService: userService,
@@ -167,4 +156,42 @@ func (h *UserHandler) UpdateUserStatus(c *gin.Context) {
 	}
 
 	SuccessWithMessage(c, "状态更新成功", nil)
+}
+
+// ChangePassword 修改密码
+func (h *UserHandler) ChangePassword(c *gin.Context) {
+	var req struct {
+		OldPassword string `json:"old_password" binding:"required"`
+		NewPassword string `json:"new_password" binding:"required"`
+	}
+
+	if err := c.ShouldBindJSON(&req); err != nil {
+		Error(c, http.StatusBadRequest, "参数错误: "+err.Error())
+		return
+	}
+
+	// 获取当前用户ID（从中间件设置的上下文）
+	userID, exists := c.Get("user_id")
+	if !exists {
+		Error(c, http.StatusUnauthorized, "未找到用户信息")
+		return
+	}
+
+	// 验证新密码格式
+	if len(req.NewPassword) < 6 {
+		Error(c, http.StatusBadRequest, "新密码长度至少为6位")
+		return
+	}
+	if len(req.NewPassword) > 20 {
+		Error(c, http.StatusBadRequest, "新密码长度不能超过20位")
+		return
+	}
+
+	err := h.userService.ChangePassword(userID.(uint), req.OldPassword, req.NewPassword)
+	if err != nil {
+		Error(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	SuccessWithMessage(c, "密码修改成功，请重新登录", nil)
 }

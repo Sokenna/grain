@@ -13,6 +13,7 @@ type User struct {
 	Nickname  string    `json:"nickname" gorm:"size:50"`
 	Avatar    string    `json:"avatar" gorm:"size:255"`
 	Role      string    `json:"role" gorm:"size:50;default:user"` //admin, user, guest
+	Roles     []Role    `json:"roles,omitempty" gorm:"many2many:user_roles"`
 	Phone     string    `json:"phone" gorm:"size:20"`
 	Gender    string    `json:"gender" gorm:"size:10"` //male, female
 	Birthday  string    `json:"birthday" gorm:"size:20"`

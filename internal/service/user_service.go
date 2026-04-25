@@ -2,10 +2,11 @@ package service
 
 import (
 	"errors"
+	"time"
+
 	"grain/internal/auth"
 	"grain/internal/model"
 	"grain/internal/repository"
-	"time"
 )
 
 // UserService 用户业务逻辑接口
@@ -17,6 +18,7 @@ type UserService interface {
 	UpdateUser(userID uint, req *model.UserUpdateRequest) error
 	DeleteUser(userID uint) error
 	UpdateUserStatus(userID uint, status int) error
+	ChangePassword(userID uint, oldPassword, newPassword string) error
 }
 
 // userService 用户业务逻辑实现
@@ -230,4 +232,43 @@ func (s *userService) UpdateUserStatus(userID uint, status int) error {
 	}
 
 	return s.userRepo.UpdateStatus(userID, status)
+}
+
+// ChangePassword 修改密码
+func (s *userService) ChangePassword(userID uint, oldPassword, newPassword string) error {
+	// 1. 获取用户信息
+	user, err := s.userRepo.GetByID(userID)
+	if err != nil {
+		return errors.New("数据库查询失败")
+	}
+	if user == nil {
+		return errors.New("用户不存在")
+	}
+
+	// 2. 验证旧密码
+	if !auth.CheckPassword(oldPassword, user.Password) {
+		return errors.New("原密码错误")
+	}
+
+	// 3. 验证新密码复杂度
+	if len(newPassword) < 6 {
+		return errors.New("新密码长度至少为6位")
+	}
+	if len(newPassword) > 20 {
+		return errors.New("新密码长度不能超过20位")
+	}
+
+	// 4. 加密新密码
+	hashedPassword, err := auth.HashPassword(newPassword)
+	if err != nil {
+		return errors.New("密码加密失败")
+	}
+
+	// 5. 更新密码
+	user.Password = hashedPassword
+	if err := s.userRepo.Update(user); err != nil {
+		return errors.New("密码更新失败")
+	}
+
+	return nil
 }
